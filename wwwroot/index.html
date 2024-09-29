@@ -1,0 +1,159 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Service</title>
+</head>
+<body>
+    <h1>Database Service</h1>
+
+    <form id="createForm">
+        <h2>Create Record</h2>
+        <label for="createTableName">Table Name:</label>
+        <input type="text" id="createTableName" required><br>
+        <label for="createData">Data (JSON):</label>
+        <textarea id="createData" required></textarea><br>
+        <button type="submit">Create</button>
+    </form>
+
+    <form id="readForm">
+        <h2>Read Records</h2>
+        <label for="readTableName">Table Name:</label>
+        <input type="text" id="readTableName" required><br>
+        <label for="readCondition">Condition:</label>
+        <input type="text" id="readCondition"><br>
+        <button type="submit">Read</button>
+    </form>
+
+    <form id="updateForm">
+        <h2>Update Record</h2>
+        <label for="updateTableName">Table Name:</label>
+        <input type="text" id="updateTableName" required><br>
+        <label for="updateData">Data (JSON):</label>
+        <textarea id="updateData" required></textarea><br>
+        <label for="updateCondition">Condition:</label>
+        <input type="text" id="updateCondition" required><br>
+        <button type="submit">Update</button>
+    </form>
+
+    <form id="deleteForm">
+        <h2>Delete Record</h2>
+        <label for="deleteTableName">Table Name:</label>
+        <input type="text" id="deleteTableName" required><br>
+        <label for="deleteCondition">Condition:</label>
+        <input type="text" id="deleteCondition" required><br>
+        <button type="submit">Delete</button>
+    </form>
+
+    <script>
+        document.getElementById('createForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const tableName = document.getElementById('createTableName').value;
+            let data;
+            try {
+                data = JSON.parse(document.getElementById('createData').value);
+            } catch (e) {
+                alert('Invalid JSON format');
+                return;
+            }
+
+            fetch('/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tableName, data })
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            }).then(data => {
+                alert(data.message);
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Failed to create record');
+            });
+        });
+
+        document.getElementById('readForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const tableName = document.getElementById('readTableName').value;
+            const condition = document.getElementById('readCondition').value;
+
+            fetch(`/read?tableName=${encodeURIComponent(tableName)}&condition=${encodeURIComponent(condition)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                }).then(data => {
+                    const resultsDiv = document.getElementById('results');
+                    resultsDiv.innerHTML = '';
+                    if (data.length === 0) {
+                        resultsDiv.innerHTML = '<p>No records found.</p>';
+                    } else {
+                        const ul = document.createElement('ul');
+                        data.forEach(record => {
+                            const li = document.createElement('li');
+                            li.textContent = JSON.stringify(record);
+                            ul.appendChild(li);
+                        });
+                        resultsDiv.appendChild(ul);
+                    }
+                }).catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to read records');
+                });
+        });
+
+        document.getElementById('updateForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const tableName = document.getElementById('updateTableName').value;
+            let data;
+            try {
+                data = JSON.parse(document.getElementById('updateData').value);
+            } catch (e) {
+                alert('Invalid JSON format');
+                return;
+            }
+            const condition = document.getElementById('updateCondition').value;
+
+            fetch('/update', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tableName, data, condition })
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            }).then(data => {
+                alert(data.message);
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Failed to update record');
+            });
+        });
+
+        document.getElementById('deleteForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const tableName = document.getElementById('deleteTableName').value;
+            const condition = document.getElementById('deleteCondition').value;
+
+            fetch(`/delete?tableName=${encodeURIComponent(tableName)}&condition=${encodeURIComponent(condition)}`, {
+                method: 'DELETE'
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            }).then(data => {
+                alert(data.message);
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Failed to delete record');
+            });
+        });
+    </script>
+</body>
+</html>
